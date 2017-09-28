@@ -9,7 +9,11 @@ from bs4 import BeautifulSoup
 class Proxy:
     def __init__(self, user_ip):
         self.user_ip = user_ip
-        self.useragents = open('useragents.txt').read().split('\n')
+        try:
+            self.useragents = open('useragents.txt').read().split('\n')
+        except FileNotFoundError:
+            print('No useragents.txt file')
+
         self.proxy_list = self.generate_proxy_list()
 
     def get_useragent(self):
@@ -144,3 +148,4 @@ class Proxy:
                 proxy = elem[0] + ':' + elem[1][5:]
                 proxy_list.append(proxy)
         return proxy_list
+
