@@ -69,8 +69,8 @@ class ProxyGrabber:
         proxy_list += self._get_ipadress_proxy()
         proxy_list += self._get_proxyscale_proxy()
         proxy_list += self._get_freeproxylist_proxy()
+        proxy_list += self._get_clarketm_list()
         # Leave only unique values
-        # Todo: get https://github.com/clarketm/proxy-list/blob/master/proxy-list.txt
         proxy_list = list(set(proxy_list))
         self.proxy_list += proxy_list
 
@@ -149,8 +149,8 @@ class ProxyGrabber:
         return result
 
     def _get_proxy_list(self, url):
-        r = requests.get(url)
-        soup = BeautifulSoup(r.text, "lxml")
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, "lxml")
         result = soup.find('table',
                            id='proxylisttable').find('tbody').find_all('tr')
         proxy_list = []
@@ -161,3 +161,12 @@ class ProxyGrabber:
                 proxy_list.append(proxy)
         return proxy_list
 
+
+    def _get_clarketm_list(self):
+        response = requests.get('https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list.txt')
+        proxies = response.text.split('\n')
+        proxy_list = []
+        for i in range(4, len(proxies) - 2):
+            proxy_list.append(proxies[i].split(' ')[0])
+
+        return proxy_list
