@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 
 
 class ProxyGrabber:
-    def __init__(self):
+    def __init__(self, proxy_limit=None):
+        self.proxy_limit = proxy_limit
         self.user_ip = self.get_ip()
         try:
             self.useragents = open('./data/user-agent.list').read().split('\n')
@@ -16,6 +17,7 @@ class ProxyGrabber:
 
         self.proxy_list = []
         self.checked_proxies = []
+
 
     def get_useragent(self):
         return random.choice(self.useragents)
@@ -47,8 +49,9 @@ class ProxyGrabber:
 
     def proxy_check(self, proxy):
         proxy = 'http://' + proxy
+        time.sleep(1)
         try:
-            result = requests.get('http://httpbin.org/ip', proxies={'http': proxy}, timeout=2.5)
+            result = requests.get('http://httpbin.org/ip', proxies={'http': proxy}, timeout=2)
             if result.status_code == 200:
                 try:
                     if result.text.count('.') >=3 and result.text.split('"')[3] != self.user_ip:
@@ -66,13 +69,13 @@ class ProxyGrabber:
 
     def generate_proxy_list(self):
         proxy_list = []
+        proxy_list += self._get_clarketm_list()
         proxy_list += self._get_ipadress_proxy()
         proxy_list += self._get_proxyscale_proxy()
         proxy_list += self._get_freeproxylist_proxy()
-        proxy_list += self._get_clarketm_list()
+
         # Leave only unique values
-        proxy_list = list(set(proxy_list))
-        self.proxy_list += proxy_list
+        self.proxy_list = list(set(self.proxy_list + proxy_list))
 
     def check_proxies(self):
         with Pool(20) as p:
@@ -98,23 +101,12 @@ class ProxyGrabber:
         return proxy_list
 
     def _get_proxyscale_proxy(self):
-        target_url_beginning_part = 'http://free.proxy-sale.com/?pg='
-        target_url_ending_part = '&port[]=http&type[]=an&type[]=el'
-        result = requests.get(target_url_beginning_part + target_url_ending_part)
+        url = 'http://free.proxy-sale.com/?pg=&port[]=http&type[]=an&type[]=el'
+        result = requests.get(base_url + endpoint)
         soup = BeautifulSoup(result.text, "lxml")
-        pages_number = int(soup.find_all('a', class_='pag-bg')[-1].get_text())
-
-        ip_list = []
-        urls = self._generate_urls(pages_number,
-                                   target_url_beginning_part, target_url_ending_part)
-
-        with Pool(7) as p:
-            map_result = p.map(self._parse, urls)
-
-        for elem in map_result:
-            ip_list += elem
-
-        return ip_list
+        endpoint = soup.find(class_='ico-export').a['href']
+        ip_list = requests.get(base_url + endpoint).text.split('\r\n')
+        return ip_list[:-1]
 
     def _generate_urls(self, pages_count, target_url_bp, target_url_ep):
         urls = []
@@ -142,7 +134,6 @@ class ProxyGrabber:
         return ip_port
 
     def _get_freeproxylist_proxy(self):
-
         result = []
         result += self._get_proxy_list('https://us-proxy.org/')
         result += self._get_proxy_list('https://free-proxy-list.net/')
@@ -168,5 +159,4 @@ class ProxyGrabber:
         proxy_list = []
         for i in range(4, len(proxies) - 2):
             proxy_list.append(proxies[i].split(' ')[0])
-
         return proxy_list
