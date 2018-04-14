@@ -10,7 +10,7 @@ $ pip3 install proxy-grabber
 # Usage
 ``` python
 from proxy_grabber import ProxyGrabber
-grabber = ProxyGrabber('./data/useragents.list') # File with user-agents
+grabber = ProxyGrabber()
 
 # --- Adding proxies ---
 

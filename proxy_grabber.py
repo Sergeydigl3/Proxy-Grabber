@@ -7,9 +7,10 @@ from bs4 import BeautifulSoup
 
 
 class ProxyGrabber:
-    def __init__(self, useragents_file):
+    def __init__(self, useragents_file=None):
         self.user_ip = self.get_ip()
-        self.useragents = open(useragents_file).read().split('\n')
+        if useragents_file is not None:
+            self.useragents = open(useragents_file).read().split('\n')
 
         self.proxy_list = []
         self.checked_proxies = []
