@@ -1,23 +1,21 @@
 # -*- coding: utf8 -*-
 import time
-import requests
 import random
 from multiprocessing import Pool
+import requests
 from bs4 import BeautifulSoup
 
 
 class ProxyGrabber:
-    def __init__(self, proxy_limit=None):
-        self.proxy_limit = proxy_limit
+    def __init__(self, useragents_file):
         self.user_ip = self.get_ip()
-        try:
-            self.useragents = open('./data/user-agent.list').read().split('\n')
-        except FileNotFoundError:
-            print('No useragents file')
+        self.useragents = open(useragents_file).read().split('\n')
 
         self.proxy_list = []
         self.checked_proxies = []
 
+    def add_proxies(self, proxies):
+        self.proxy_list += proxies
 
     def get_useragent(self):
         return random.choice(self.useragents)
@@ -41,9 +39,9 @@ class ProxyGrabber:
         for proxy in proxies:
             self.proxy_list.append(proxy.rstrip())
 
-    def save_proxies(self, proxies, filename='./data/proxy-list.txt'):
+    def save_proxies(self, filename='./data/proxy-list.txt'):
         file = open(filename, 'w')
-        for proxy in proxies:
+        for proxy in self.checked_proxies:
             file.write(proxy[7:] + '\n')
         file.close()
 
@@ -66,16 +64,25 @@ class ProxyGrabber:
             return False
         except requests.exceptions.ChunkedEncodingError:
             return False
+        except requests.exceptions.TooManyRedirects:
+            return False
 
-    def generate_proxy_list(self):
+    def grab_proxies(self, proxy_limit=None):
         proxy_list = []
-        proxy_list += self._get_clarketm_list()
-        proxy_list += self._get_ipadress_proxy()
-        proxy_list += self._get_proxyscale_proxy()
-        proxy_list += self._get_freeproxylist_proxy()
+        proxy_sources = [
+            self._get_clarketm_list,
+            self._get_ipadress_proxy,
+            self._get_proxyscale_proxy,
+            self._get_freeproxylist_proxy]
 
-        # Leave only unique values
+        for parse_source in proxy_sources:
+            proxy_list += parse_source()
+            if proxy_limit is not None and len(proxy_list) > proxy_limit:
+                self.proxy_list = list(set(self.proxy_list + proxy_list))
+                return self.proxy_list
+
         self.proxy_list = list(set(self.proxy_list + proxy_list))
+        return self.proxy_list
 
     def check_proxies(self):
         with Pool(20) as p:
@@ -102,10 +109,10 @@ class ProxyGrabber:
 
     def _get_proxyscale_proxy(self):
         url = 'http://free.proxy-sale.com/?pg=&port[]=http&type[]=an&type[]=el'
-        result = requests.get(base_url + endpoint)
+        result = requests.get(url)
         soup = BeautifulSoup(result.text, "lxml")
-        endpoint = soup.find(class_='ico-export').a['href']
-        ip_list = requests.get(base_url + endpoint).text.split('\r\n')
+        export_url = soup.find(class_='ico-export-tre').a['href']
+        ip_list = requests.get('http://free.proxy-sale.com/' + export_url).text.split('\r\n')
         return ip_list[:-1]
 
     def _generate_urls(self, pages_count, target_url_bp, target_url_ep):
