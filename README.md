@@ -1,8 +1,13 @@
 # Proxy-Grabber
 Simple http proxy grabber and checker
 
-# Usage
+# Installation
 
+```
+$ pip3 install proxy-grabber
+```
+
+# Usage
 ``` python
 import ProxyGrabber
 grabber = ProxyGrabber('./data/useragents.list') # File with user-agents
@@ -11,7 +16,7 @@ grabber = ProxyGrabber('./data/useragents.list') # File with user-agents
 
 # Parse proxy from different sources
 # You can call generate_proxy_list() without arguments if you want to grab as more proxies as possible
-grabber.generate_proxy_list(proxy_limit=100)
+grabber.grab_proxies(proxy_limit=100)
 
 # [optional]
 # Also you can add some proxies from file
@@ -24,12 +29,9 @@ grabber.add_proxies(['ip:port', 'ip:port', ...])
 # --- Checking proxies ---
 grabber.check_proxies()
 
-
 # --- Get results ---
-grabber.get_proxy() # random checked proxy
-grabber.get_checked_proxies() # all checked proxies
-grabber.save_proxies('./data/checked_proxies.list') # save checked proxies to file
+grabber.get_proxy() # Random checked proxy
+grabber.get_checked_proxies() # All checked proxies
+grabber.save_proxies('./data/checked_proxies.list') # Save checked proxies to file
 ```
-
-
 
