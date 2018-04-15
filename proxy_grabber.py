@@ -28,7 +28,7 @@ class ProxyGrabber:
         return self.checked_proxies
 
     def get_proxy(self):
-        return random.choice(self.check_proxies)
+        return random.choice(self.checked_proxies)
 
     def get_ip(self, proxies={}):
         return requests.get(url="http://httpbin.org/ip", proxies=proxies).text.split('"')[3]
