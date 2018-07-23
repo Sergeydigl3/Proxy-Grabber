@@ -7,10 +7,12 @@ from bs4 import BeautifulSoup
 
 
 class ProxyGrabber:
-    def __init__(self, useragents_file=None):
+    def __init__(self, useragents_file=None, not_country=None):
         self.user_ip = self.get_ip()
         if useragents_file is not None:
             self.useragents = open(useragents_file).read().split('\n')
+        if not_country == None: self.not_country = []
+        else: self.not_country = not_country
 
         self.proxy_list = []
         self.checked_proxies = []
@@ -47,13 +49,18 @@ class ProxyGrabber:
         file.close()
 
     def proxy_check(self, proxy):
+        not_country = self.not_country
         proxy = 'http://' + proxy
         time.sleep(1)
         try:
-            result = requests.get('http://httpbin.org/ip', proxies={'http': proxy}, timeout=2)
+            result = requests.get('http://ip-api.com/json', proxies={'http': proxy}, timeout=2)
             if result.status_code == 200:
                 try:
-                    if result.text.count('.') >=3 and result.text.split('"')[3] != self.user_ip:
+                    if result.json()['status']=='success' and result.json()['query']!= self.user_ip:
+                        if len(not_country)>0:
+                            result2=result
+                            if not result2.json()['countryCode'] in not_country: return proxy
+                            else: return False
                         return proxy
                 except IndexError:
                     return False
